@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1410">
+<title>TapMyGym - Админ</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header><div class="wrap bar">
+  <div class="logo">Tap<b>My</b>Gym <span class="hint" style="font:500 14px Barlow,sans-serif">Admin</span></div>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Language"><button data-l="bg" aria-pressed="true">БГ</button><button data-l="en" aria-pressed="false">EN</button></div>
+    <a class="btn ghost sm" id="viewLink" href="menu.html" style="text-decoration:none"></a>
+    <button class="btn ghost sm" id="outBtn" hidden></button>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section class="login" id="login">
+    <div class="tablet">
+      <h1 id="lT"></h1>
+      <div class="demo" id="demo" hidden></div>
+      <form id="lf" autocomplete="on">
+        <label><span id="lE"></span><input type="email" name="email" autocomplete="username" required></label>
+        <label><span id="lP"></span><input type="password" name="pw" autocomplete="current-password" required></label>
+        <div class="err" id="err" role="alert"></div>
+        <button class="btn" type="submit" id="lGo"></button>
+        <button class="link" type="button" id="lForgot"></button>
+      </form>
+    </div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="hero" style="padding:24px 0 8px;grid-template-columns:1fr"><h1 id="aT" style="font-size:44px"></h1></div>
+    <div class="admin on">
+      <div><strong id="cnt"></strong><div class="hint" id="aH"></div></div>
+      <div class="row">
+        <button class="btn sm" id="addBtn"></button>
+        <button class="btn ghost sm" id="csvBtn"></button>
+        <button class="btn ghost sm" id="expBtn"></button>
+        <button class="btn ghost sm" id="impBtn"></button>
+        <input type="file" id="impFile" accept="application/json" hidden>
+        <input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden>
+      </div>
+    </div>
+    <div class="items" id="items"></div>
+  </section>
+</main>
+
+<div class="modal" id="formM" role="dialog" aria-modal="true"><div class="sheet" id="formS"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== FIREBASE: paste your web app config here (same config as menu.html) ===== */
+const FIREBASE_CONFIG = null;
+/* e.g. {apiKey:"...",authDomain:"...",projectId:"...",appId:"..."}
+   Firebase console: enable Authentication > Email/Password, create a user, create Firestore.
+   Collection used: "exercises". */
+
+const A={
+bg:{lT:"Вход",lE:"Имейл",lP:"Парола",lGo:"Вход",forgot:"Забравена парола",sent:"Изпратихме имейл за нова парола.",needEmail:"Въведете имейл първо.",bad:"Грешен имейл или парола.",fail:"Входът не успя. Опитайте пак.",demo:"Демо режим: Firebase още не е свързан. Всеки имейл и парола влизат, а данните стоят само в този браузър.",out:"Изход",view:"Към менюто",aT:"Упражнения",aH:"Промените се виждат веднага в менюто.",add:"+ Ново упражнение",csv:"Импорт на CSV",exp:"Експорт",imp:"Импорт",edit:"Редакция",empty:"Още няма упражнения. Добавете първото.",sample:"Добави примерни упражнения",cnt:" упражнения",sets:"Серии",lv:{beginner:"Начинаещ",intermediate:"Среден",advanced:"Напреднал"},nameBg:"Име (БГ)",nameEn:"Име (EN)",cat:"Категория",level:"Ниво",setsrepsL:"Серии x повторения",eqL:"Уред / оборудване",vid:"Линк към видео",vidH:"YouTube, Vimeo или директен .mp4 линк",descBg:"Описание и съвети (БГ)",descEn:"Описание и съвети (EN)",save:"Запази",cancel:"Отказ",del:"Изтрий",delQ:"Да изтрия ли това упражнение?",saved:"Запазено",deleted:"Изтрито",needName:"Въведете име на упражнението",imported:"Импортирано",badFile:"Файлът не е валиден",newT:"Ново упражнение",editT:"Редакция",csvQ:"Да заменя ли текущите упражнения с тези от CSV? ОК = замени, Отказ = добави към тях.",csvNone:"Не открих редове с име. Проверете заглавията на колоните.",csvN:" реда от CSV",saveFail:"Записът не успя"},
+en:{lT:"Sign in",lE:"Email",lP:"Password",lGo:"Sign in",forgot:"Forgot password",sent:"We sent a password reset email.",needEmail:"Enter your email first.",bad:"Wrong email or password.",fail:"Sign-in failed. Try again.",demo:"Demo mode: Firebase isn't connected yet. Any email and password work, and data stays in this browser only.",out:"Sign out",view:"View menu",aT:"Exercises",aH:"Changes show up in the menu right away.",add:"+ New exercise",csv:"Import CSV",exp:"Export",imp:"Import",edit:"Edit",empty:"No exercises yet. Add the first one.",sample:"Add sample exercises",cnt:" exercises",sets:"Sets",lv:{beginner:"Beginner",intermediate:"Intermediate",advanced:"Advanced"},nameBg:"Name (BG)",nameEn:"Name (EN)",cat:"Category",level:"Level",setsrepsL:"Sets x reps",eqL:"Equipment",vid:"Video link",vidH:"YouTube, Vimeo or a direct .mp4 link",descBg:"Description and tips (BG)",descEn:"Description and tips (EN)",save:"Save",cancel:"Cancel",del:"Delete",delQ:"Delete this exercise?",saved:"Saved",deleted:"Deleted",needName:"Enter an exercise name",imported:"Imported",badFile:"That file is not valid",newT:"New exercise",editT:"Edit exercise",csvQ:"Replace the current exercises with the CSV rows? OK = replace, Cancel = add to them.",csvNone:"No rows with a name found. Check the column headers.",csvN:" rows from CSV",saveFail:"Could not save"}};
+const SEED=[
+{nb:"Лег с щанга",ne:"Barbell bench press",cat:"Гърди",lv:"intermediate",sets:"4 x 8",eq:"Щанга, лавица",vid:"",db:"Легнете на лавицата, стъпала на пода. Свалете щангата до средата на гърдите и избутайте контролирано.",de:"Lie on the bench, feet flat. Lower the bar to mid-chest and press up with control."},
+{nb:"Набирания",ne:"Pull-ups",cat:"Гръб",lv:"intermediate",sets:"3 x 8",eq:"Лост",vid:"",db:"Хват малко по-широк от раменете. Дръпнете брадичката над лоста без люлеене.",de:"Grip just wider than shoulders. Pull your chin over the bar without swinging."},
+{nb:"Клек",ne:"Back squat",cat:"Крака",lv:"intermediate",sets:"4 x 6",eq:"Щанга, стойка",vid:"",db:"Гръб прав, коленете следват посоката на пръстите.",de:"Keep your back straight, knees tracking over toes."},
+{nb:"Планк",ne:"Plank",cat:"Корем",lv:"beginner",sets:"3 x 45 сек",eq:"Постелка",vid:"",db:"Тялото е права линия от глава до пети.",de:"Body in a straight line from head to heels."}];
+const KEY="tmg.v1";
+let S={lang:"bg",items:[]},fs=null,auth=null;
+const $=id=>document.getElementById(id),t=()=>A[S.lang];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const load=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+function toast(m){const x=$("toast");x.textContent=m;x.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>x.style.display="none",2200)}
+const nm=i=>(S.lang==="en"?i.ne||i.nb:i.nb||i.ne)||"";
+
+/* ---------- data layer (Firestore or local demo) ---------- */
+async function loadAll(){
+  if(fs){const s=await fs.collection("exercises").get();return s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.ts||0)-(b.ts||0))}
+  try{const r=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(r))return r}catch(e){}
+  return SEED.map((o,n)=>({...o,id:"s"+n}))}
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S.items))}catch(e){}};
+async function save(o){
+  if(fs){const id=o.id,d={...o};delete d.id;if(id)await fs.collection("exercises").doc(id).set(d);else{d.ts=Date.now();await fs.collection("exercises").add(d)}}
+  else{if(!o.id)o.id="e"+Date.now();const i=S.items.findIndex(a=>a.id===o.id);i>=0?S.items[i]=o:S.items.push(o);persist()}}
+async function remove(id){if(fs)await fs.collection("exercises").doc(id).delete();else{S.items=S.items.filter(a=>a.id!==id);persist()}}
+async function bulk(arr,replace){
+  if(fs){const c=fs.collection("exercises");
+    if(replace){const s=await c.get();for(let i=0;i<s.docs.length;i+=400){const b=fs.batch();s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}}
+    for(let i=0;i<arr.length;i+=400){const b=fs.batch();arr.slice(i,i+400).forEach((o,n)=>{const d={...o};delete d.id;d.ts=Date.now()+i+n;b.set(c.doc(),d)});await b.commit()}}
+  else{S.items=replace?arr:S.items.concat(arr);persist()}}
+async function refresh(){S.items=await loadAll();paintList()}
+
+/* ---------- UI ---------- */
+function paintStatic(){const x=t();
+  $("lT").textContent=x.lT;$("lE").textContent=x.lE;$("lP").textContent=x.lP;$("lGo").textContent=x.lGo;$("lForgot").textContent=x.forgot;
+  $("demo").textContent=x.demo;$("demo").hidden=!!FIREBASE_CONFIG;
+  $("outBtn").textContent=x.out;$("viewLink").textContent=x.view;
+  $("aT").textContent=x.aT;$("aH").textContent=x.aH;$("addBtn").textContent=x.add;$("csvBtn").textContent=x.csv;$("expBtn").textContent=x.exp;$("impBtn").textContent=x.imp;
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===S.lang));document.documentElement.lang=S.lang;
+  if(!$("app").hidden)paintList()}
+function paintList(){const x=t();$("cnt").textContent=S.items.length+x.cnt;
+  $("items").innerHTML=S.items.length?S.items.map(i=>`<div class="it"><div><h3>${esc(nm(i))}</h3><div class="meta">${i.cat?`<span>${esc(i.cat)}</span>`:""}<span>${esc(x.lv[i.lv]||"")}</span>${i.sets?`<span>${esc(i.sets)}</span>`:""}<span>${i.vid?"▶":"-"}</span></div></div>
+   <button class="btn ghost sm" data-e="${esc(i.id)}">${x.edit}</button></div>`).join(""):
+   `<div class="empty">${x.empty}<br><br><button class="btn sm" id="seedBtn">${x.sample}</button></div>`}
+function showApp(){$("login").hidden=true;$("app").hidden=false;$("outBtn").hidden=false;refresh().catch(()=>toast(t().saveFail))}
+function showLogin(){$("login").hidden=false;$("app").hidden=true;$("outBtn").hidden=true}
+
+$("lf").onsubmit=async e=>{e.preventDefault();$("err").textContent="";const d=Object.fromEntries(new FormData(e.target));
+  if(!auth){showApp();return}
+  try{await auth.signInWithEmailAndPassword(d.email,d.pw)}
+  catch(er){$("err").textContent=/invalid-credential|wrong-password|user-not-found|invalid-login/.test(er.code||"")?t().bad:t().fail}};
+$("lForgot").onclick=async()=>{const m=$("lf").elements.email.value.trim();if(!m){$("err").textContent=t().needEmail;return}
+  if(auth){try{await auth.sendPasswordResetEmail(m);$("err").textContent=t().sent}catch(er){$("err").textContent=t().fail}}};
+$("outBtn").onclick=async()=>{if(auth)await auth.signOut();else showLogin()};
+
+function openForm(id){const x=t(),i=S.items.find(a=>a.id===id)||{id:"",nb:"",ne:"",cat:"",lv:"beginner",sets:"",eq:"",vid:"",db:"",de:""};
+  const cats=[...new Set(S.items.map(a=>a.cat).filter(Boolean))];
+  $("formS").innerHTML=`<button class="close" data-x="1" aria-label="Close">✕</button><h2>${id?x.editT:x.newT}</h2>
+  <form id="f" data-id="${esc(i.id)}">
+   <div class="two"><label>${x.nameBg}<input name="nb" value="${esc(i.nb)}"></label><label>${x.nameEn}<input name="ne" value="${esc(i.ne)}"></label></div>
+   <div class="two"><label>${x.cat}<input name="cat" list="cl" value="${esc(i.cat)}"><datalist id="cl">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+   <label>${x.level}<select name="lv">${Object.entries(x.lv).map(([k,v])=>`<option value="${k}" ${i.lv===k?"selected":""}>${v}</option>`).join("")}</select></label></div>
+   <div class="two"><label>${x.setsrepsL}<input name="sets" value="${esc(i.sets)}"></label><label>${x.eqL}<input name="eq" value="${esc(i.eq)}"></label></div>
+   <label>${x.vid}<input name="vid" type="url" placeholder="https://" value="${esc(i.vid)}"><span class="hint">${x.vidH}</span></label>
+   <label>${x.descBg}<textarea name="db" rows="3">${esc(i.db)}</textarea></label>
+   <label>${x.descEn}<textarea name="de" rows="3">${esc(i.de)}</textarea></label>
+   <div class="row"><button class="btn" type="submit">${x.save}</button><button class="btn ghost" type="button" data-x="1">${x.cancel}</button>${id?`<button class="btn danger" type="button" data-d="${esc(id)}" style="margin-left:auto">${x.del}</button>`:""}</div>
+  </form>`;$("formM").classList.add("open")}
+const shut=()=>$("formM").classList.remove("open");
+document.addEventListener("submit",async e=>{if(e.target.id!=="f")return;e.preventDefault();
+  const d=Object.fromEntries(new FormData(e.target)),x=t();
+  if(!d.nb.trim()&&!d.ne.trim()){toast(x.needName);return}
+  const o={id:e.target.dataset.id,...Object.fromEntries(Object.entries(d).map(([k,v])=>[k,v.trim()]))};
+  try{await save(o);shut();await refresh();toast(x.saved)}catch(er){console.error(er);toast(x.saveFail)}});
+document.addEventListener("click",async e=>{
+  if(e.target===$("formM"))return shut();
+  const b=e.target.closest("button");if(!b)return;const x=t();
+  try{
+  if(b.dataset.l){S.lang=b.dataset.l;paintStatic()}
+  else if(b.dataset.e)openForm(b.dataset.e);
+  else if(b.dataset.x)shut();
+  else if(b.dataset.d){if(confirm(x.delQ)){await remove(b.dataset.d);shut();await refresh();toast(x.deleted)}}
+  else if(b.id==="seedBtn"){await bulk(SEED.map(o=>({...o,id:""})),false);await refresh()}
+  }catch(er){console.error(er);toast(x.saveFail)}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")shut()});
+$("addBtn").onclick=()=>openForm("");
+$("expBtn").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S.items,null,2)],{type:"application/json"}));a.download="tapmygym-exercises.json";document.body.appendChild(a);a.click();a.remove()};
+$("impBtn").onclick=()=>$("impFile").click();
+$("impFile").onchange=async e=>{const fl=e.target.files[0];if(!fl)return;
+  try{const p=JSON.parse(await fl.text());if(!Array.isArray(p))throw 0;await bulk(p.map(o=>({...o,id:""})),confirm(t().csvQ));await refresh();toast(t().imported)}catch(_){toast(t().badFile)}e.target.value=""};
+
+/* ---------- CSV import ---------- */
+function parseCSV(s){s=s.replace(/^\uFEFF/,"");const f0=s.split(/\r?\n/)[0];const d=[";","\t",","].map(c=>[c,f0.split(c).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const rows=[];let r=[],f="",q=false;
+  for(let i=0;i<s.length;i++){const c=s[i];
+    if(q){if(c==='"'){if(s[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===d){r.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&s[i+1]==="\n")i++;r.push(f);f="";if(r.some(v=>v.trim()))rows.push(r);r=[]}
+    else f+=c}
+  r.push(f);if(r.some(v=>v.trim()))rows.push(r);return rows}
+function colField(h){h=h.toLowerCase().replace(/[_\-]+/g," ").trim();
+  if(/image|photo|img|снимка|снимки|price|цена|allerg|алерген/.test(h))return null;
+  const bg=/(^|[^a-z])bg([^a-z]|$)|бг|bulg/.test(h),en=/(^|[^a-z])en([^a-z]|$)|engl|англ/.test(h);
+  if(/name|title|dish|item|exercise|име|ястие|наименование|упражнение/.test(h))return bg?"nb":en?"ne":"n";
+  if(/desc|описание|ingredient|състав|tips|съвет/.test(h))return bg?"db":en?"de":"d";
+  if(/categ|категор|section|секция|group|група/.test(h))return "cat";
+  if(/video|youtube|видео|link|url/.test(h))return "vid";
+  if(/level|ниво/.test(h))return "lv";
+  if(/sets|reps|серии|повторения/.test(h))return "sets";
+  if(/equip|уред|оборуд/.test(h))return "eq";
+  return null}
+const lvOf=v=>{v=(v||"").toLowerCase();return /adv|напред/.test(v)?"advanced":/inter|med|сред/.test(v)?"intermediate":"beginner"};
+$("csvBtn").onclick=()=>$("csvFile").click();
+$("csvFile").onchange=async e=>{const fl=e.target.files[0];if(!fl)return;
+  try{const rows=parseCSV(await fl.text()),map=rows[0].map(colField),out=[];
+    rows.slice(1).forEach(r=>{const o={id:"",nb:"",ne:"",cat:"",lv:"beginner",sets:"",eq:"",vid:"",db:"",de:""};
+      map.forEach((k,i)=>{const v=(r[i]||"").trim();if(!k||!v)return;
+        if(k==="n"){o.nb=o.nb||v;o.ne=o.ne||v}else if(k==="d"){o.db=o.db||v;o.de=o.de||v}else if(k==="lv")o.lv=lvOf(v);else o[k]=v});
+      if(o.nb||o.ne)out.push(o)});
+    if(!out.length){toast(t().csvNone);return}
+    await bulk(out,confirm(t().csvQ));await refresh();toast(out.length+t().csvN)}
+  catch(er){console.error(er);toast(t().badFile)}e.target.value=""};
+
+/* ---------- boot ---------- */
+(async()=>{paintStatic();
+  if(FIREBASE_CONFIG){try{const B="https://www.gstatic.com/firebasejs/10.12.2/";
+    await load(B+"firebase-app-compat.js");await load(B+"firebase-auth-compat.js");await load(B+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();fs=firebase.firestore();
+    auth.onAuthStateChanged(u=>u?showApp():showLogin())}catch(e){console.error(e);$("err").textContent=t().fail}}
+})();
+</script>
+</body>
+</html>

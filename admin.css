@@ -1,0 +1,9 @@
+.login{max-width:420px;padding:48px 18px}
+.login .tablet{padding:22px;text-align:left}
+.login h1{font-size:40px;margin-bottom:6px}
+.err{color:var(--danger);font-size:14px;min-height:20px}
+.demo{background:var(--panel2);border:1px dashed var(--accent);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--muted);margin:14px 0}
+.items{display:grid;gap:8px;padding-bottom:60px}
+.it{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.it h3{font-size:22px}.it .meta{margin-top:2px}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0;font-size:14px}
