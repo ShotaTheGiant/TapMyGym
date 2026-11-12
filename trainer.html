@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1410">
+<title>TapMyGym - Треньор</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header><div class="wrap bar">
+  <div class="logo">Tap<b>My</b>Gym <span class="hint" style="font:500 14px Barlow,sans-serif">Trainer</span></div>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Language"><button data-l="bg" aria-pressed="true">БГ</button><button data-l="en" aria-pressed="false">EN</button></div>
+    <button class="btn ghost sm" id="outBtn" hidden></button>
+  </div>
+</div></header>
+<main class="wrap">
+  <section class="login" id="login">
+    <div class="tablet">
+      <h1 id="lT"></h1>
+      <form id="lf" autocomplete="on">
+        <label><span id="lE"></span><input type="email" name="email" autocomplete="username" required></label>
+        <label><span id="lP"></span><input type="password" name="pw" autocomplete="current-password" required></label>
+        <div class="err" id="err" role="alert"></div>
+        <button class="btn" type="submit" id="lGo"></button>
+        <button class="link" type="button" id="lForgot"></button>
+      </form>
+    </div>
+  </section>
+  <section id="app" hidden>
+    <div class="hero" style="padding:24px 0 8px;grid-template-columns:1fr"><div><h1 id="hi" style="font-size:44px"></h1><p id="sub"></p></div></div>
+    <div class="reqs" id="reqs" aria-live="polite"></div>
+    <div class="empty" id="none"></div>
+  </section>
+</main>
+<script src="firebase-config.js"></script>
+<script>
+const D={
+bg:{lT:"Вход за треньори",lE:"Имейл",lP:"Парола",lGo:"Вход",forgot:"Забравена парола",sent:"Изпратихме имейл за нова парола.",needEmail:"Въведете имейл първо.",bad:"Грешен имейл или парола.",fail:"Входът не успя. Опитайте пак.",noFb:"Firebase още не е свързан. Добавете конфигурацията във firebase-config.js.",noLink:"Този акаунт не е свързан с треньор. Помолете администратора да добави имейла ви.",out:"Изход",hi:"Здравей, ",sub:"Тук виждаш кога някой те вика. Дръж страницата отворена.",none:"Няма повиквания в момента.",calls:"Вика те клиент",now:"току-що",ago:"преди ",min:" мин",done:"Готово"},
+en:{lT:"Trainer sign in",lE:"Email",lP:"Password",lGo:"Sign in",forgot:"Forgot password",sent:"We sent a password reset email.",needEmail:"Enter your email first.",bad:"Wrong email or password.",fail:"Sign-in failed. Try again.",noFb:"Firebase isn't connected yet. Add the config in firebase-config.js.",noLink:"This account isn't linked to a trainer. Ask the admin to add your email.",out:"Sign out",hi:"Hi, ",sub:"You'll see here when someone calls you. Keep this page open.",none:"No calls right now.",calls:"A client is calling you",now:"just now",ago:"",min:" min ago",done:"Done"}};
+let S={lang:"bg",reqs:[],coach:null},fs=null,auth=null,unsub=null,reqN=-1;
+const $=id=>document.getElementById(id),t=()=>D[S.lang];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const load=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(c.currentTime+.4)}catch(e){}try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}
+function ago(ts){const m=Math.max(0,Math.round((Date.now()-ts)/60000)),x=t();return m<1?x.now:x.ago+m+x.min}
+function paintStatic(){const x=t();$("lT").textContent=x.lT;$("lE").textContent=x.lE;$("lP").textContent=x.lP;$("lGo").textContent=x.lGo;$("lForgot").textContent=x.forgot;$("outBtn").textContent=x.out;
+  $("sub").textContent=x.sub;$("hi").textContent=x.hi+(S.coach?S.coach.name:"");$("none").textContent=x.none;
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===S.lang));document.documentElement.lang=S.lang;paintReqs()}
+function paintReqs(){const x=t();
+  $("reqs").innerHTML=S.reqs.map(r=>`<div class="req"><span>🔔 <b>${x.calls}</b> · ${ago(r.ts)}${r.spot||r.card?`<br>📍 <b>${esc(r.spot||r.card)}</b>`:""}</span><button class="btn sm" data-r="${esc(r.id)}">${x.done}</button></div>`).join("");
+  $("none").hidden=S.reqs.length>0;document.title=(S.reqs.length?"("+S.reqs.length+") ":"")+"TapMyGym Trainer"}
+function showLogin(){if(unsub){unsub();unsub=null}S.reqs=[];S.coach=null;$("login").hidden=false;$("app").hidden=true;$("outBtn").hidden=true}
+function showApp(){$("login").hidden=true;$("app").hidden=false;$("outBtn").hidden=false;paintStatic();
+  reqN=-1;unsub=fs.collection("calls").where("coachId","==",S.coach.id).where("done","==",false).onSnapshot(s=>{
+    S.reqs=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if(reqN>=0&&S.reqs.length>reqN)beep();reqN=S.reqs.length;paintReqs()},e=>console.error(e))}
+$("lf").onsubmit=async e=>{e.preventDefault();$("err").textContent="";if(!auth){$("err").textContent=t().noFb;return}
+  const d=Object.fromEntries(new FormData(e.target));
+  try{await auth.signInWithEmailAndPassword(d.email,d.pw)}catch(er){$("err").textContent=/invalid-credential|wrong-password|user-not-found|invalid-login/.test(er.code||"")?t().bad:t().fail}};
+$("lForgot").onclick=async()=>{const m=$("lf").elements.email.value.trim();if(!m){$("err").textContent=t().needEmail;return}
+  if(!auth){$("err").textContent=t().noFb;return}try{await auth.sendPasswordResetEmail(m);$("err").textContent=t().sent}catch(er){$("err").textContent=t().fail}};
+$("outBtn").onclick=()=>auth&&auth.signOut();
+document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.l){S.lang=b.dataset.l;paintStatic()}
+  else if(b.dataset.r){try{await fs.collection("calls").doc(b.dataset.r).update({done:true})}catch(er){console.error(er)}}});
+setInterval(()=>{if(S.reqs.length)paintReqs()},30000);
+(async()=>{paintStatic();
+  if(!FIREBASE_CONFIG){$("err").textContent=t().noFb;return}
+  try{const B="https://www.gstatic.com/firebasejs/10.12.2/";
+    await load(B+"firebase-app-compat.js");await load(B+"firebase-auth-compat.js");await load(B+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();fs=firebase.firestore();
+    auth.onAuthStateChanged(async u=>{
+      if(!u){showLogin();return}
+      try{const l=await fs.collection("coachAuth").doc((u.email||"").toLowerCase()).get();
+        if(!l.exists||l.data().uid!==u.uid){await auth.signOut();$("err").textContent=t().noLink;return}
+        const cid=l.data().coachId,c=await fs.collection("coaches").doc(cid).get();
+        S.coach={id:cid,name:c.exists?c.data().name:""};showApp()}
+      catch(er){console.error(er);$("err").textContent=t().fail;await auth.signOut()}})
+  }catch(e){console.error(e);$("err").textContent=t().fail}
+})();
+</script>
+</body>
+</html>
