@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1410">
+<title>TapMyGym - Панел</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header><div class="wrap wide bar">
+  <div class="logo">Tap<b>My</b>Gym <span class="hint" style="font:500 14px Barlow,sans-serif">Panel</span></div>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Language"><button data-l="bg" aria-pressed="true">БГ</button><button data-l="en" aria-pressed="false">EN</button></div>
+    <span class="hint" id="who" hidden style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button class="btn ghost sm" id="outBtn" hidden></button>
+  </div>
+</div></header>
+<main class="wrap wide">
+  <section class="login" id="login">
+    <div class="tablet">
+      <h1 id="lT"></h1>
+      <form id="lf" autocomplete="on">
+        <label><span id="lE"></span><input type="email" name="email" autocomplete="username" required></label>
+        <label><span id="lP"></span><input type="password" name="pw" autocomplete="current-password" required></label>
+        <div class="err" id="err" role="alert"></div>
+        <button class="btn" type="submit" id="lGo"></button>
+        <button class="link" type="button" id="lForgot"></button>
+      </form>
+    </div>
+  </section>
+  <section id="app" hidden>
+    <div class="shell">
+      <aside class="side">
+        <button class="btn" data-a="new" id="newBtn"></button>
+        <div class="gyms" id="gyms"></div>
+        <button class="btn ghost sm" data-a="admins" id="adminsBtn"></button>
+      </aside>
+      <section id="main"></section>
+    </div>
+  </section>
+</main>
+<input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden>
+<div class="modal" id="formM" role="dialog" aria-modal="true"><div class="sheet" id="formS"></div></div>
+<div class="toast" id="toast"></div>
+<script src="firebase-config.js"></script>
+<script>
+const A={
+bg:{newGym:"+ Нов салон",ownersT:"Собственици на салона",ownersSub:"Влизат в owner.html и управляват само този салон: упражнения, треньори, карти и детайли.",addOwner:"+ Нов собственик",ownerLink:"Копирай линк към таблото",ownerNone:"Още няма собственици.",noGyms:"Още няма салони.",pickGym:"Изберете салон от списъка или създайте нов.",tabInfo:"Детайли",gymName:"Име на салона",gymSlug:"URL име (в линка)",slugH:"Малки латински букви, цифри и тире. Не се сменя по-късно, защото е в линковете на картите.",gymSlogan:"Надпис (БГ)",gymSloganEn:"Надпис (EN)",gymLogo:"Логотип, линк (по избор)",gymAccent:"Основен цвят",gymLink:"Линк към менюто на салона",openMenu:"Отвори менюто",suspend:"Спри менюто",resume:"Пусни менюто",suspended:"Спрян",delGym:"Изтрий салона",delGymQ:"Всички упражнения, треньори и карти на салона ще бъдат изтрити. Напишете URL името „{s}“ за да потвърдите.",createGymT:"Нов салон",createBtn:"Създай",slugBad:"URL името трябва да е 3-40 малки латински букви, цифри или тире.",slugUsed:"Това URL име вече съществува.",noAccess:"Този акаунт няма достъп до панела.",noFb:"Firebase още не е свързан. Добавете конфигурацията във firebase-config.js.",adminsT:"Администратори",adminsSub:"Хората с достъп до този панел.",adminsBtn:"Администратори",newAdmin:"Нов администратор",gymCreated:"Салонът е създаден",lT:"Вход",lE:"Имейл",lP:"Парола",lGo:"Вход",forgot:"Забравена парола",sent:"Изпратихме имейл за нова парола.",needEmail:"Въведете имейл първо.",bad:"Грешен имейл или парола.",fail:"Входът не успя. Опитайте пак.",demo:"Демо режим: Firebase още не е свързан. Всеки имейл и парола влизат, а данните стоят само в този браузър.",out:"Изход",view:"Към менюто",aT:"Упражнения",aH:"Промените се виждат веднага в менюто.",add:"+ Ново упражнение",csv:"Импорт на CSV",exp:"Експорт",imp:"Импорт",edit:"Редакция",empty:"Още няма упражнения. Добавете първото.",sample:"Добави примерни упражнения",cnt:" упражнения",sets:"Серии",lv:{beginner:"Начинаещ",intermediate:"Среден",advanced:"Напреднал"},nameBg:"Име (БГ)",nameEn:"Име (EN)",cat:"Категория",level:"Ниво",setsrepsL:"Серии x повторения",eqL:"Уред / оборудване",vid:"Линк към видео",vidH:"YouTube, Vimeo или директен .mp4 линк",descBg:"Описание и съвети (БГ)",descEn:"Описание и съвети (EN)",save:"Запази",cancel:"Отказ",del:"Изтрий",delQ:"Да изтрия ли това упражнение?",saved:"Запазено",deleted:"Изтрито",needName:"Въведете име на упражнението",imported:"Импортирано",badFile:"Файлът не е валиден",newT:"Ново упражнение",editT:"Редакция",csvQ:"Да заменя ли текущите упражнения с тези от CSV? ОК = замени, Отказ = добави към тях.",csvNone:"Не открих редове с име. Проверете заглавията на колоните.",csvN:" реда от CSV",saveFail:"Записът не успя",tabEx:"Упражнения",tabCo:"Треньори",addCo:"+ Нов треньор",cntCo:" треньори",coachName:"Име",coachRole:"Специалност (напр. Силови тренировки)",coachPhoto:"Линк към снимка (по избор)",coachEmpty:"Още няма треньори. Добавете първия.",coachNewT:"Нов треньор",coachEditT:"Редакция на треньор",delQc:"Да изтрия ли този треньор?",reqCalled:" е повикан в ",done:"Готово",coachEmail:"Имейл за вход на треньора (по избор)",coachEmailH:"Треньорът влиза в trainer.html с този имейл. Първо създайте потребителя във Firebase Authentication.",cuT:"Създаване на треньор",cuSub:"Създава треньор и акаунт за вход в панела на треньорите.",cuName:"Име",cuEmail:"Имейл",cuPw:"Парола",cuPw2:"Потвърди паролата",cuBtn:"Създай треньор",close:"Затвори",pwMin:"Паролата трябва да е поне 6 символа.",pwMatch:"Паролите не съвпадат.",emailUsed:"Този имейл вече има акаунт.",badEmail:"Невалиден имейл.",signupOff:"Създаването на акаунти е изключено във Firebase (Authentication → Settings → User actions).",created:"Треньорът е създаден",tabCa:"Карти",addCa:"+ Нова карта",cntCa:" карти",cardCode:"Код / сериен номер на картата",cardCodeH:"Същият код като в линка на картата. Позволени: букви, цифри, - и _.",cardName:"Име на мястото (БГ)",cardNameEn:"Име на мястото (EN)",cardNew:"Нова карта",cardEdit:"Редакция на карта",cardEmpty:"Още няма карти. Добавете първата.",copyLink:"Копирай линк",copied:"Линкът е копиран",codeUsed:"Този код вече съществува",needCode:"Въведете код на картата",delQk:"Да изтрия ли тази карта?"},
+en:{newGym:"+ New gym",ownersT:"Gym owners",ownersSub:"They sign in at owner.html and manage only this gym: exercises, trainers, cards and details.",addOwner:"+ New owner",ownerLink:"Copy dashboard link",ownerNone:"No owners yet.",noGyms:"No gyms yet.",pickGym:"Pick a gym from the list or create a new one.",tabInfo:"Details",gymName:"Gym name",gymSlug:"URL name (in the link)",slugH:"Lowercase letters, digits and dashes. It can't be changed later because it's in the card links.",gymSlogan:"Tagline (BG)",gymSloganEn:"Tagline (EN)",gymLogo:"Logo link (optional)",gymAccent:"Main colour",gymLink:"Link to the gym's menu",openMenu:"Open menu",suspend:"Suspend menu",resume:"Resume menu",suspended:"Suspended",delGym:"Delete gym",delGymQ:"All exercises, coaches and cards of this gym will be deleted. Type the URL name \"{s}\" to confirm.",createGymT:"New gym",createBtn:"Create",slugBad:"The URL name must be 3-40 lowercase letters, digits or dashes.",slugUsed:"This URL name already exists.",noAccess:"This account has no access to the panel.",noFb:"Firebase isn't connected yet. Add the config in firebase-config.js.",adminsT:"Administrators",adminsSub:"People with access to this panel.",adminsBtn:"Administrators",newAdmin:"New administrator",gymCreated:"Gym created",lT:"Sign in",lE:"Email",lP:"Password",lGo:"Sign in",forgot:"Forgot password",sent:"We sent a password reset email.",needEmail:"Enter your email first.",bad:"Wrong email or password.",fail:"Sign-in failed. Try again.",demo:"Demo mode: Firebase isn't connected yet. Any email and password work, and data stays in this browser only.",out:"Sign out",view:"View menu",aT:"Exercises",aH:"Changes show up in the menu right away.",add:"+ New exercise",csv:"Import CSV",exp:"Export",imp:"Import",edit:"Edit",empty:"No exercises yet. Add the first one.",sample:"Add sample exercises",cnt:" exercises",sets:"Sets",lv:{beginner:"Beginner",intermediate:"Intermediate",advanced:"Advanced"},nameBg:"Name (BG)",nameEn:"Name (EN)",cat:"Category",level:"Level",setsrepsL:"Sets x reps",eqL:"Equipment",vid:"Video link",vidH:"YouTube, Vimeo or a direct .mp4 link",descBg:"Description and tips (BG)",descEn:"Description and tips (EN)",save:"Save",cancel:"Cancel",del:"Delete",delQ:"Delete this exercise?",saved:"Saved",deleted:"Deleted",needName:"Enter an exercise name",imported:"Imported",badFile:"That file is not valid",newT:"New exercise",editT:"Edit exercise",csvQ:"Replace the current exercises with the CSV rows? OK = replace, Cancel = add to them.",csvNone:"No rows with a name found. Check the column headers.",csvN:" rows from CSV",saveFail:"Could not save",tabEx:"Exercises",tabCo:"Coaches",addCo:"+ New coach",cntCo:" coaches",coachName:"Name",coachRole:"Specialty (e.g. Strength training)",coachPhoto:"Photo link (optional)",coachEmpty:"No coaches yet. Add the first one.",coachNewT:"New coach",coachEditT:"Edit coach",delQc:"Delete this coach?",reqCalled:" was called at ",done:"Done",coachEmail:"Trainer login email (optional)",coachEmailH:"The trainer signs in at trainer.html with this email. Create the user in Firebase Authentication first.",cuT:"Create trainer",cuSub:"Creates a trainer and a login account for the trainer panel.",cuName:"Name",cuEmail:"Email",cuPw:"Password",cuPw2:"Confirm password",cuBtn:"Create trainer",close:"Close",pwMin:"Password must be at least 6 characters.",pwMatch:"Passwords do not match.",emailUsed:"This email already has an account.",badEmail:"Invalid email.",signupOff:"Account creation is turned off in Firebase (Authentication → Settings → User actions).",created:"Trainer created",tabCa:"Cards",addCa:"+ New card",cntCa:" cards",cardCode:"Card code / serial number",cardCodeH:"The same code as in the card link. Allowed: letters, digits, - and _.",cardName:"Place name (BG)",cardNameEn:"Place name (EN)",cardNew:"New card",cardEdit:"Edit card",cardEmpty:"No cards yet. Add the first one.",copyLink:"Copy link",copied:"Link copied",codeUsed:"This code already exists",needCode:"Enter the card code",delQk:"Delete this card?"}};
+const SEED=[
+{nb:"Лег с щанга",ne:"Barbell bench press",cat:"Гърди",lv:"intermediate",sets:"4 x 8",eq:"Щанга, лавица",vid:"",db:"Легнете на лавицата, стъпала на пода. Свалете щангата до средата на гърдите и избутайте контролирано.",de:"Lie on the bench, feet flat. Lower the bar to mid-chest and press up with control."},
+{nb:"Набирания",ne:"Pull-ups",cat:"Гръб",lv:"intermediate",sets:"3 x 8",eq:"Лост",vid:"",db:"Хват малко по-широк от раменете. Дръпнете брадичката над лоста без люлеене.",de:"Grip just wider than shoulders. Pull your chin over the bar without swinging."},
+{nb:"Клек",ne:"Back squat",cat:"Крака",lv:"intermediate",sets:"4 x 6",eq:"Щанга, стойка",vid:"",db:"Гръб прав, коленете следват посоката на пръстите.",de:"Keep your back straight, knees tracking over toes."},
+{nb:"Планк",ne:"Plank",cat:"Корем",lv:"beginner",sets:"3 x 45 сек",eq:"Постелка",vid:"",db:"Тялото е права линия от глава до пети.",de:"Body in a straight line from head to heels."}];
+let S={lang:"bg",gyms:[],g:null,tab:"info",items:[],coaches:[],cards:[],trainers:[],owners:[],reqs:[]},fs=null,auth=null,unsub=null,reqN=-1;
+const $=id=>document.getElementById(id),t=()=>A[S.lang];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const load=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+function toast(m){const x=$("toast");x.textContent=m;x.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>x.style.display="none",3200)}
+const docs=s=>s.docs.map(d=>({...d.data(),id:d.id})),byTs=(a,b)=>(a.ts||0)-(b.ts||0);
+const gc=n=>fs.collection("gyms").doc(S.g).collection(n);
+const G=()=>S.gyms.find(g=>g.id===S.g);
+const nm=i=>(S.lang==="en"?i.ne||i.nb:i.nb||i.ne)||"";
+const normSlug=s=>String(s||"").trim().toLowerCase();
+const slugify=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+const SLUG=/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
+const normCard=v=>String(v||"").trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,64);
+const menuUrl=x=>{const u=new URL("menu.html",location.href);u.search="?gym="+encodeURIComponent(S.g)+(x||"");u.hash="";return u.href};
+const cardUrl=c=>menuUrl("&card="+encodeURIComponent(c));
+const av=c=>`<span class="av">${esc((c.name||"?").trim().charAt(0).toUpperCase())}${c.photo?`<img src="${esc(c.photo)}" alt="" onerror="this.remove()">`:""}</span>`;
+const trOf=id=>S.trainers.find(x=>x.coachId===id);
+const errText=e=>{const c=e.code||"",x=t();return c==="auth/email-already-in-use"?x.emailUsed:/operation-not-allowed|admin-restricted/.test(c)?x.signupOff:c==="auth/weak-password"?x.pwMin:c==="auth/invalid-email"?x.badEmail:x.saveFail+" ("+(c||e.message||"")+")"};
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(c.currentTime+.3)}catch(e){}}
+const openModal=h=>{$("formS").innerHTML=h;$("formM").classList.add("open")};
+const shut=()=>$("formM").classList.remove("open");
+async function copy(u){try{await navigator.clipboard.writeText(u);toast(t().copied)}catch(e){prompt("",u)}}
+
+/* ---------- data ---------- */
+async function loadGyms(){S.gyms=docs(await fs.collection("gyms").get()).sort((a,b)=>(a.name||"").localeCompare(b.name||""))}
+async function loadGym(){if(!S.g)return;
+  const[a,b,c,d,ow]=await Promise.all([gc("exercises").get(),gc("coaches").get(),gc("cards").get(),fs.collection("trainers").where("gymId","==",S.g).get(),fs.collection("owners").where("gymId","==",S.g).get()]);
+  S.items=docs(a).sort(byTs);S.coaches=docs(b).sort(byTs);S.cards=docs(c).sort((x,y)=>(x.name||"").localeCompare(y.name||""));S.trainers=docs(d);S.owners=docs(ow)}
+async function put(col,o){const id=o.id,d={...o};delete d.id;if(id){await gc(col).doc(id).set(d,{merge:true});return id}d.ts=Date.now();return(await gc(col).add(d)).id}
+async function bulkAdd(arr,replace){const c=gc("exercises");
+  if(replace){const s=await c.get();for(let i=0;i<s.docs.length;i+=400){const b=fs.batch();s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}}
+  for(let i=0;i<arr.length;i+=400){const b=fs.batch();arr.slice(i,i+400).forEach((o,n)=>{const d={...o};delete d.id;d.ts=Date.now()+i+n;b.set(c.doc(),d)});await b.commit()}}
+async function wipeGym(id){const g=fs.collection("gyms").doc(id);
+  for(const n of["exercises","coaches","cards","calls"]){const s=await g.collection(n).get();for(let i=0;i<s.docs.length;i+=400){const b=fs.batch();s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}}
+  const tr=await fs.collection("trainers").where("gymId","==",id).get();for(const d of tr.docs)await d.ref.delete();
+  await g.delete()}
+async function createAuthUser(email,pw){
+  let app2;try{app2=firebase.app("creator")}catch(e){app2=firebase.initializeApp(FIREBASE_CONFIG,"creator")}
+  const a2=app2.auth();
+  try{const cr=await a2.createUserWithEmailAndPassword(email,pw);return cr.user.uid}
+  finally{try{await a2.signOut()}catch(e){}}}
+function stopReqs(){if(unsub){unsub();unsub=null}S.reqs=[];reqN=-1}
+function listenReqs(){stopReqs();if(!S.g)return;const g=S.g;
+  unsub=gc("calls").where("done","==",false).onSnapshot(s=>{if(g!==S.g)return;S.reqs=docs(s).sort(byTs);if(reqN>=0&&S.reqs.length>reqN)beep();reqN=S.reqs.length;paintReqs()},e=>console.error(e))}
+async function pick(id){S.g=id;S.tab="info";stopReqs();paintAll();
+  try{await loadGym()}catch(e){console.error(e);toast(errText(e))}
+  listenReqs();paintAll()}
+async function refresh(){await loadGym();paintMain()}
+
+/* ---------- painting ---------- */
+function paintStatic(){const x=t();
+  $("lT").textContent=x.lT;$("lE").textContent=x.lE;$("lP").textContent=x.lP;$("lGo").textContent=x.lGo;$("lForgot").textContent=x.forgot;
+  $("outBtn").textContent=x.out;$("newBtn").textContent=x.newGym;$("adminsBtn").textContent=x.adminsBtn;
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===S.lang));document.documentElement.lang=S.lang;
+  if(!$("app").hidden)paintAll()}
+function paintAll(){paintSide();paintMain()}
+function paintSide(){const x=t();
+  $("gyms").innerHTML=S.gyms.length?S.gyms.map(g=>`<button class="gy ${g.id===S.g?"on":""}" data-a="gym" data-id="${esc(g.id)}"><b>${esc(g.name||g.id)}</b><small>${esc(g.id)}${g.suspended?" · "+x.suspended:""}</small></button>`).join(""):`<p class="hint">${x.noGyms}</p>`}
+function paintReqs(){const r=$("reqs");if(!r)return;const x=t();
+  r.innerHTML=S.reqs.map(q=>`<div class="req"><span>🔔 <b>${esc(q.coachName)}</b>${x.reqCalled}${new Date(q.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}${q.spot||q.card?` · 📍 <b>${esc(q.spot||q.card)}</b>`:""}</span><button class="btn sm" data-a="done" data-id="${esc(q.id)}">${x.done}</button></div>`).join("")}
+function paintMain(){const x=t(),g=G(),m=$("main");
+  if(!g){m.innerHTML=`<div class="empty">${x.pickGym}</div>`;return}
+  const tabs=[["info",x.tabInfo],["ex",x.tabEx],["co",x.tabCo],["ca",x.tabCa]];
+  m.innerHTML=`<div class="gh"><div><h1>${esc(g.name||g.id)}</h1><div class="hint">${esc(g.id)}${g.suspended?" · "+x.suspended:""}</div></div><a class="btn ghost sm" href="${esc(menuUrl())}" target="_blank" rel="noopener" style="text-decoration:none">${x.openMenu}</a></div>
+  <div class="reqs" id="reqs" aria-live="polite"></div>
+  <div class="chips">${tabs.map(([k,l])=>`<button class="chip" data-a="tab" data-id="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join("")}</div>
+  <div id="body">${bodyHtml(g)}</div>`;paintReqs()}
+function bar(count,btns){return`<div class="admin on"><div><strong>${count}</strong></div><div class="row">${btns}</div></div>`}
+function bodyHtml(g){const x=t(),tb=S.tab;
+  if(tb==="info")return`<form id="gf">
+   <label>${x.gymName}<input name="name" maxlength="60" value="${esc(g.name)}" required></label>
+   <label>${x.gymSlug}<input value="${esc(g.id)}" readonly></label>
+   <div class="two"><label>${x.gymSlogan}<input name="slogan" maxlength="90" value="${esc(g.slogan||"")}"></label><label>${x.gymSloganEn}<input name="sloganEn" maxlength="90" value="${esc(g.sloganEn||"")}"></label></div>
+   <div class="two"><label>${x.gymLogo}<input name="logo" type="url" placeholder="https://" value="${esc(g.logo||"")}"></label><label>${x.gymAccent}<input name="accent" type="color" value="${esc(g.accent||"#e0a458")}" style="height:44px;padding:4px"></label></div>
+   <div class="row"><button class="btn" type="submit">${x.save}</button></div></form>
+   <div class="box"><div class="hint">${x.gymLink}</div><div style="word-break:break-all;margin:4px 0 10px">${esc(menuUrl())}</div>
+   <div class="row"><button class="btn ghost sm" data-a="cp">${x.copyLink}</button><button class="btn ghost sm" data-a="toggle">${g.suspended?x.resume:x.suspend}</button><button class="btn danger sm" data-a="delGym" style="margin-left:auto">${x.delGym}</button></div></div>
+   <div class="box"><h3>${x.ownersT}</h3><div class="hint">${x.ownersSub}</div>
+   <div class="items" style="margin-top:10px">${S.owners.length?S.owners.map(w=>`<div class="it"><div><h3>${esc(w.name||w.id)}</h3><div class="meta"><span>🔑 ${esc(w.id)}</span></div></div><button class="btn danger sm" data-a="delOwner" data-id="${esc(w.id)}">${x.del}</button></div>`).join(""):`<p class="hint">${x.ownerNone}</p>`}</div>
+   <div class="row"><button class="btn sm" data-a="addOwner">${x.addOwner}</button><button class="btn ghost sm" data-a="cpOwner">${x.ownerLink}</button></div></div>`;
+  if(tb==="ex")return bar(S.items.length+x.cnt,`<button class="btn sm" data-a="addEx">${x.add}</button><button class="btn ghost sm" data-a="csv">${x.csv}</button><button class="btn ghost sm" data-a="export">${x.exp}</button>`)+
+   `<div class="items">${S.items.length?S.items.map(i=>`<div class="it"><div><h3>${esc(nm(i))}</h3><div class="meta">${i.cat?`<span>${esc(i.cat)}</span>`:""}<span>${esc(x.lv[i.lv]||"")}</span>${i.sets?`<span>${esc(i.sets)}</span>`:""}<span>${i.vid?"▶":"-"}</span></div></div><button class="btn ghost sm" data-a="editEx" data-id="${esc(i.id)}">${x.edit}</button></div>`).join(""):`<div class="empty">${x.empty}<br><br><button class="btn sm" data-a="seed">${x.sample}</button></div>`}</div>`;
+  if(tb==="co")return bar(S.coaches.length+x.cntCo,`<button class="btn sm" data-a="addCo">${x.addCo}</button>`)+
+   `<div class="items">${S.coaches.length?S.coaches.map(c=>`<div class="it"><div class="row">${av(c)}<div><h3>${esc(c.name)}</h3><div class="meta"><span>${esc(c.role||"")}</span>${trOf(c.id)?`<span>🔑 ${esc(trOf(c.id).id)}</span>`:""}</div></div></div><button class="btn ghost sm" data-a="editCo" data-id="${esc(c.id)}">${x.edit}</button></div>`).join(""):`<div class="empty">${x.coachEmpty}</div>`}</div>`;
+  return bar(S.cards.length+x.cntCa,`<button class="btn sm" data-a="addCa">${x.addCa}</button>`)+
+   `<div class="items">${S.cards.length?S.cards.map(k=>`<div class="it"><div style="min-width:0"><h3>📍 ${esc(k.name||k.nameEn||"")}</h3><div class="meta"><span>${esc(k.id)}</span></div><div class="hint" style="word-break:break-all">${esc(cardUrl(k.id))}</div></div><div class="row"><button class="btn ghost sm" data-a="cp" data-id="${esc(k.id)}">${x.copyLink}</button><button class="btn ghost sm" data-a="editCa" data-id="${esc(k.id)}">${x.edit}</button></div></div>`).join(""):`<div class="empty">${x.cardEmpty}</div>`}</div>`}
+
+/* ---------- forms ---------- */
+function openNewGym(){const x=t();
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${x.createGymT}</h2>
+  <form id="nf" autocomplete="off">
+   <label>${x.gymName}<input name="gname" maxlength="60" required></label>
+   <label>${x.gymSlug}<input name="slug" maxlength="40" required placeholder="my-gym"><span class="hint">${x.slugH}</span></label>
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.createBtn}</button><button class="btn ghost" type="button" data-x="1">${x.cancel}</button></div></form>`)}
+function openOwner(){const x=t();
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${x.addOwner.replace("+ ","")}</h2><p class="hint">${x.ownersSub}</p>
+  <form id="of" autocomplete="off">
+   <label>${x.cuName}<input name="name" required></label>
+   <label>${x.cuEmail}<input name="email" type="email" autocomplete="off" required></label>
+   ${pwField("pw",x.cuPw)}${pwField("pw2",x.cuPw2)}
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.cuBtn}</button><button class="btn ghost" type="button" data-x="1">${x.close}</button></div></form>`)}
+function openEx(id){const x=t(),i=S.items.find(a=>a.id===id)||{id:"",nb:"",ne:"",cat:"",lv:"beginner",sets:"",eq:"",vid:"",db:"",de:""};
+  const cats=[...new Set(S.items.map(a=>a.cat).filter(Boolean))];
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${id?x.editT:x.newT}</h2>
+  <form id="xf" data-id="${esc(i.id)}">
+   <div class="two"><label>${x.nameBg}<input name="nb" value="${esc(i.nb)}"></label><label>${x.nameEn}<input name="ne" value="${esc(i.ne)}"></label></div>
+   <div class="two"><label>${x.cat}<input name="cat" list="cl" value="${esc(i.cat)}"><datalist id="cl">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+   <label>${x.level}<select name="lv">${Object.entries(x.lv).map(([k,v])=>`<option value="${k}" ${i.lv===k?"selected":""}>${v}</option>`).join("")}</select></label></div>
+   <div class="two"><label>${x.setsrepsL}<input name="sets" value="${esc(i.sets)}"></label><label>${x.eqL}<input name="eq" value="${esc(i.eq)}"></label></div>
+   <label>${x.vid}<input name="vid" type="url" placeholder="https://" value="${esc(i.vid)}"><span class="hint">${x.vidH}</span></label>
+   <label>${x.descBg}<textarea name="db" rows="3">${esc(i.db)}</textarea></label>
+   <label>${x.descEn}<textarea name="de" rows="3">${esc(i.de)}</textarea></label>
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.save}</button><button class="btn ghost" type="button" data-x="1">${x.cancel}</button>${id?`<button class="btn danger" type="button" data-a="delEx" data-id="${esc(id)}" style="margin-left:auto">${x.del}</button>`:""}</div></form>`)}
+function openCo(id){const x=t(),c=S.coaches.find(a=>a.id===id);if(!c)return;const tr=trOf(id);
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${x.coachEditT}</h2>
+  <form id="cf" data-id="${esc(c.id)}">
+   <label>${x.coachName}<input name="name" value="${esc(c.name)}"></label>
+   <label>${x.coachRole}<input name="role" value="${esc(c.role||"")}"></label>
+   <label>${x.coachPhoto}<input name="photo" type="url" placeholder="https://" value="${esc(c.photo||"")}"></label>
+   ${tr?`<p class="hint">🔑 ${esc(tr.id)}</p>`:""}
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.save}</button><button class="btn ghost" type="button" data-x="1">${x.cancel}</button><button class="btn danger" type="button" data-a="delCo" data-id="${esc(id)}" style="margin-left:auto">${x.del}</button></div></form>`)}
+const pwField=(name,label)=>`<label>${label}<span class="pw"><input name="${name}" type="password" autocomplete="new-password" required><button type="button" class="eye" data-eye="1" aria-label="Show password">👁</button></span></label>`;
+function openCreate(){const x=t();
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${x.cuT}</h2><p class="hint">${x.cuSub}</p>
+  <form id="uf" autocomplete="off">
+   <label>${x.cuName}<input name="name" placeholder="John Smith" required></label>
+   <label>${x.cuEmail}<input name="email" type="email" placeholder="user@example.com" autocomplete="off" required></label>
+   ${pwField("pw",x.cuPw)}${pwField("pw2",x.cuPw2)}
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.cuBtn}</button><button class="btn ghost" type="button" data-x="1">${x.close}</button></div></form>`)}
+function openCard(id){const x=t(),k=S.cards.find(a=>a.id===id)||{id:"",name:"",nameEn:""};
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${id?x.cardEdit:x.cardNew}</h2>
+  <form id="kf" data-id="${esc(k.id)}">
+   <label>${x.cardCode}<input name="code" value="${esc(k.id)}" ${id?"readonly":""} required><span class="hint">${x.cardCodeH}</span></label>
+   <label>${x.cardName}<input name="name" maxlength="60" value="${esc(k.name)}" required></label>
+   <label>${x.cardNameEn}<input name="nameEn" maxlength="60" value="${esc(k.nameEn||"")}"></label>
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.save}</button><button class="btn ghost" type="button" data-x="1">${x.cancel}</button>${id?`<button class="btn danger" type="button" data-a="delCa" data-id="${esc(id)}" style="margin-left:auto">${x.del}</button>`:""}</div></form>`)}
+async function openAdmins(){const x=t(),ad=docs(await fs.collection("admins").get());
+  openModal(`<button class="close" data-x="1" aria-label="${x.close}">✕</button><h2>${x.adminsT}</h2><p class="hint">${x.adminsSub}</p>
+  <div class="coaches">${ad.map(a=>`<div class="coach"><span><b>${esc(a.name||a.id)}</b><small>${esc(a.id)}</small></span><button class="btn danger sm" style="margin-left:auto" data-a="delAdmin" data-id="${esc(a.id)}">${x.del}</button></div>`).join("")}</div>
+  <h3 style="margin:18px 0 0">${x.newAdmin}</h3>
+  <form id="af" autocomplete="off">
+   <label>${x.cuName}<input name="name" required></label>
+   <label>${x.cuEmail}<input name="email" type="email" autocomplete="off" required></label>
+   ${pwField("pw",x.cuPw)}${pwField("pw2",x.cuPw2)}
+   <div class="err" role="alert"></div>
+   <div class="row"><button class="btn" type="submit">${x.cuBtn}</button></div></form>`)}
+function exportJson(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S.items,null,2)],{type:"application/json"}));a.download=S.g+"-exercises.json";document.body.appendChild(a);a.click();a.remove()}
+
+/* ---------- events ---------- */
+document.addEventListener("input",e=>{const f=e.target.form;if(!f||f.id!=="nf")return;
+  if(e.target.name==="gname"&&!f.elements.slug.dataset.t)f.elements.slug.value=slugify(e.target.value);
+  if(e.target.name==="slug")f.elements.slug.dataset.t="1"});
+document.addEventListener("submit",async e=>{e.preventDefault();const f=e.target,fid=f.id,x=t();
+  if(fid==="lf")return;
+  const d=Object.fromEntries(new FormData(f)),eb=f.querySelector(".err"),btn=f.querySelector("[type=submit]");
+  const bad=m=>{if(eb)eb.textContent=m;else toast(m)};
+  if(eb)eb.textContent="";if(btn)btn.disabled=true;
+  try{
+    if(fid==="gf"){await fs.collection("gyms").doc(S.g).set({name:d.name.trim(),slogan:d.slogan.trim(),sloganEn:d.sloganEn.trim(),logo:d.logo.trim(),accent:d.accent},{merge:true});await loadGyms();paintAll();toast(x.saved)}
+    else if(fid==="nf"){const slug=d.slug.trim().toLowerCase(),name=d.gname.trim();
+      if(!name){bad(x.needName);return}if(!SLUG.test(slug)){bad(x.slugBad);return}
+      if((await fs.collection("gyms").doc(slug).get()).exists){bad(x.slugUsed);return}
+      await fs.collection("gyms").doc(slug).set({name,slogan:"",sloganEn:"",logo:"",accent:"#e0a458",suspended:false,ts:Date.now()});
+      await loadGyms();shut();await pick(slug);toast(x.gymCreated)}
+    else if(fid==="xf"){if(!d.nb.trim()&&!d.ne.trim()){bad(x.needName);return}
+      const o={id:f.dataset.id};for(const k of["nb","ne","cat","lv","sets","eq","vid","db","de"])o[k]=(d[k]||"").trim();
+      await put("exercises",o);shut();await refresh();toast(x.saved)}
+    else if(fid==="cf"){if(!d.name.trim()){bad(x.needName);return}
+      await put("coaches",{id:f.dataset.id,name:d.name.trim(),role:d.role.trim(),photo:d.photo.trim()});shut();await refresh();toast(x.saved)}
+    else if(fid==="uf"){const name=d.name.trim(),email=d.email.trim().toLowerCase();
+      if(!name){bad(x.needName);return}if(d.pw.length<6){bad(x.pwMin);return}if(d.pw!==d.pw2){bad(x.pwMatch);return}
+      const uid=await createAuthUser(email,d.pw);
+      const cid=await put("coaches",{id:"",name,role:"",photo:""});
+      await fs.collection("trainers").doc(email).set({gymId:S.g,coachId:cid,uid,name});
+      shut();await refresh();toast(x.created)}
+    else if(fid==="kf"){const code=normCard(d.code);if(!code){bad(x.needCode);return}if(!d.name.trim()){bad(x.needName);return}
+      if(!f.dataset.id&&S.cards.some(k=>k.id===code)){bad(x.codeUsed);return}
+      await gc("cards").doc(code).set({code,name:d.name.trim(),nameEn:d.nameEn.trim()},{merge:true});shut();await refresh();toast(x.saved)}
+    else if(fid==="of"){const name=d.name.trim(),email=d.email.trim().toLowerCase();
+      if(!name){bad(x.needName);return}if(d.pw.length<6){bad(x.pwMin);return}if(d.pw!==d.pw2){bad(x.pwMatch);return}
+      const uid=await createAuthUser(email,d.pw);
+      await fs.collection("owners").doc(email).set({gymId:S.g,uid,name,ts:Date.now()});
+      shut();await refresh();toast(x.created)}
+    else if(fid==="af"){const name=d.name.trim(),email=d.email.trim().toLowerCase();
+      if(!name){bad(x.needName);return}if(d.pw.length<6){bad(x.pwMin);return}if(d.pw!==d.pw2){bad(x.pwMatch);return}
+      const uid=await createAuthUser(email,d.pw);
+      await fs.collection("admins").doc(email).set({name,uid,ts:Date.now()});
+      await openAdmins();toast(x.created)}
+  }catch(er){console.error(er);bad(errText(er))}
+  finally{if(btn)btn.disabled=false}});
+document.addEventListener("click",async e=>{
+  if(e.target===$("formM"))return shut();
+  const b=e.target.closest("button");if(!b)return;const a=b.dataset.a,id=b.dataset.id,x=t();
+  try{
+    if(b.dataset.l){S.lang=b.dataset.l;paintStatic()}
+    else if(b.dataset.x)shut();
+    else if(b.dataset.eye){const i=b.parentElement.querySelector("input");i.type=i.type==="password"?"text":"password"}
+    else if(a==="gym")await pick(id);
+    else if(a==="new")openNewGym();
+    else if(a==="tab"){S.tab=id;paintMain()}
+    else if(a==="addEx")openEx("");
+    else if(a==="editEx")openEx(id);
+    else if(a==="addCo")openCreate();
+    else if(a==="editCo")openCo(id);
+    else if(a==="addCa")openCard("");
+    else if(a==="editCa")openCard(id);
+    else if(a==="csv")$("csvFile").click();
+    else if(a==="export")exportJson();
+    else if(a==="cp")copy(id?cardUrl(id):menuUrl());
+    else if(a==="seed"){await bulkAdd(SEED,false);await refresh()}
+    else if(a==="toggle"){await fs.collection("gyms").doc(S.g).set({suspended:!G().suspended},{merge:true});await loadGyms();paintAll()}
+    else if(a==="delGym"){const v=prompt(x.delGymQ.replace("{s}",S.g));if(normSlug(v)!==S.g)return;await wipeGym(S.g);S.g=null;stopReqs();await loadGyms();paintAll();toast(x.deleted)}
+    else if(a==="delEx"){if(confirm(x.delQ)){await gc("exercises").doc(id).delete();shut();await refresh();toast(x.deleted)}}
+    else if(a==="delCo"){if(confirm(x.delQc)){const tr=trOf(id);if(tr)await fs.collection("trainers").doc(tr.id).delete();await gc("coaches").doc(id).delete();shut();await refresh();toast(x.deleted)}}
+    else if(a==="delCa"){if(confirm(x.delQk)){await gc("cards").doc(id).delete();shut();await refresh();toast(x.deleted)}}
+    else if(a==="done")await gc("calls").doc(id).update({done:true});
+    else if(a==="addOwner")openOwner();
+    else if(a==="cpOwner")copy(new URL("owner.html",location.href).href);
+    else if(a==="delOwner"){if(confirm(x.delQc)){await fs.collection("owners").doc(id).delete();await refresh();toast(x.deleted)}}
+    else if(a==="admins")await openAdmins();
+    else if(a==="delAdmin"){if(confirm(x.delQc)){await fs.collection("admins").doc(id).delete();await openAdmins()}}
+  }catch(er){console.error(er);toast(errText(er))}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")shut()});
+
+/* ---------- CSV import ---------- */
+function parseCSV(s){s=s.replace(/^\uFEFF/,"");const f0=s.split(/\r?\n/)[0];const d=[";","\t",","].map(c=>[c,f0.split(c).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const rows=[];let r=[],f="",q=false;
+  for(let i=0;i<s.length;i++){const c=s[i];
+    if(q){if(c==='"'){if(s[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===d){r.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&s[i+1]==="\n")i++;r.push(f);f="";if(r.some(v=>v.trim()))rows.push(r);r=[]}
+    else f+=c}
+  r.push(f);if(r.some(v=>v.trim()))rows.push(r);return rows}
+function colField(h){h=h.toLowerCase().replace(/[_\-]+/g," ").trim();
+  if(/image|photo|img|снимка|снимки|price|цена|allerg|алерген/.test(h))return null;
+  const bg=/(^|[^a-z])bg([^a-z]|$)|бг|bulg/.test(h),en=/(^|[^a-z])en([^a-z]|$)|engl|англ/.test(h);
+  if(/name|title|dish|item|exercise|име|ястие|наименование|упражнение/.test(h))return bg?"nb":en?"ne":"n";
+  if(/desc|описание|ingredient|състав|tips|съвет/.test(h))return bg?"db":en?"de":"d";
+  if(/categ|категор|section|секция|group|група/.test(h))return "cat";
+  if(/video|youtube|видео|link|url/.test(h))return "vid";
+  if(/level|ниво/.test(h))return "lv";
+  if(/sets|reps|серии|повторения/.test(h))return "sets";
+  if(/equip|уред|оборуд/.test(h))return "eq";
+  return null}
+const lvOf=v=>{v=(v||"").toLowerCase();return /adv|напред/.test(v)?"advanced":/inter|med|сред/.test(v)?"intermediate":"beginner"};
+
+$("csvFile").onchange=async e=>{const fl=e.target.files[0];if(!fl)return;
+  try{const rows=parseCSV(await fl.text()),map=rows[0].map(colField),out=[];
+    rows.slice(1).forEach(r=>{const o={nb:"",ne:"",cat:"",lv:"beginner",sets:"",eq:"",vid:"",db:"",de:""};
+      map.forEach((k,i)=>{const v=(r[i]||"").trim();if(!k||!v)return;
+        if(k==="n"){o.nb=o.nb||v;o.ne=o.ne||v}else if(k==="d"){o.db=o.db||v;o.de=o.de||v}else if(k==="lv")o.lv=lvOf(v);else o[k]=v});
+      if(o.nb||o.ne)out.push(o)});
+    if(!out.length){toast(t().csvNone);return}
+    await bulkAdd(out,confirm(t().csvQ));await refresh();toast(out.length+t().csvN)}
+  catch(er){console.error(er);toast(t().badFile)}e.target.value=""};
+
+/* ---------- login & boot ---------- */
+function showLogin(){stopReqs();S.g=null;$("login").hidden=false;$("app").hidden=true;$("outBtn").hidden=true;$("who").hidden=true}
+function showApp(u){$("login").hidden=true;$("app").hidden=false;$("outBtn").hidden=false;$("who").textContent=u.email;$("who").hidden=false;paintAll();if(S.gyms.length&&!S.g)pick(S.gyms[0].id)}
+$("lf").onsubmit=async e=>{e.preventDefault();$("err").textContent="";if(!auth){$("err").textContent=t().noFb;return}
+  const d=Object.fromEntries(new FormData(e.target));
+  try{await auth.signInWithEmailAndPassword(d.email,d.pw)}catch(er){$("err").textContent=/invalid-credential|wrong-password|user-not-found|invalid-login/.test(er.code||"")?t().bad:t().fail}};
+$("lForgot").onclick=async()=>{const m=$("lf").elements.email.value.trim();if(!m){$("err").textContent=t().needEmail;return}
+  if(!auth){$("err").textContent=t().noFb;return}try{await auth.sendPasswordResetEmail(m);$("err").textContent=t().sent}catch(er){$("err").textContent=t().fail}};
+$("outBtn").onclick=()=>auth&&auth.signOut();
+(async()=>{paintStatic();
+  if(!FIREBASE_CONFIG){$("err").textContent=t().noFb;return}
+  try{const B="https://www.gstatic.com/firebasejs/10.12.2/";
+    await load(B+"firebase-app-compat.js");await load(B+"firebase-auth-compat.js");await load(B+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();fs=firebase.firestore();
+    auth.onAuthStateChanged(async u=>{
+      if(!u){showLogin();return}
+      try{await loadGyms()}
+      catch(er){console.error(er);if(/permission/i.test((er.code||"")+(er.message||""))){await auth.signOut();$("err").textContent=t().noAccess;return}$("err").textContent=t().fail;await auth.signOut();return}
+      showApp(u)})
+  }catch(e){console.error(e);$("err").textContent=t().fail}
+})();
+</script>
+</body>
+</html>
