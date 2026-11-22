@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a09">
+<title>TapMyGym - Меню с упражнения</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="splash" id="splash" aria-hidden="true"><div class="sp"><div class="sp-brand" id="spBrand"></div><span class="sp-line"></span><p class="sp-txt">Подготвяме тренировката ви…</p></div></div>
+<header><div class="wrap bar">
+  <div class="logo">Tap<b>My</b>Gym</div>
+  <div class="seg" role="group" aria-label="Language"><button data-l="bg" aria-pressed="true">БГ</button><button data-l="en" aria-pressed="false">EN</button></div>
+</div></header>
+<main class="wrap">
+  <section class="hero" style="grid-template-columns:1fr">
+    <div><h1 id="hTitle"></h1><p id="hSub"></p></div>
+  </section>
+  <div class="tools"><input type="search" id="q"><select id="lvl"></select></div>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+</main>
+<footer id="foot"><div class="wrap fgrid" id="fgrid"></div><div class="wrap fcopy" id="fcopy">© 2026 TapMyGym</div></footer>
+<button class="fab" id="fab" type="button"></button>
+<div class="modal" id="coachM" role="dialog" aria-modal="true"><div class="sheet" id="coachS"></div></div>
+<div class="notice" id="notice" role="status" hidden><span id="noticeT"></span><button type="button" id="noticeX" aria-label="Close">✕</button></div>
+<div class="modal" id="viewM" role="dialog" aria-modal="true"><div class="sheet" id="viewS"></div></div>
+
+<script src="firebase-config.js"></script>
+<script>
+/* Firebase config lives in firebase-config.js. Collections used: exercises, coaches, calls. */
+
+const T={
+bg:{title:"Тренировъчното меню, което е в джоба ви.",sub:"Всяко повторение те доближава до най-добрата ти форма.",motto:"Силен ум = Силни резултати",wifi:"Wi-Fi",pw:"Парола",copyPw:"Копирай",copied:"Паролата е копирана",hours:"Работно време",today:"Днес",closed:"Затворено",openNow:"Отворено сега",closedNow:"Затворено сега",week:"Цялата седмица",allDay:"24 часа",days:["Понеделник","Вторник","Сряда","Четвъртък","Петък","Събота","Неделя"],ds:["Пон","Вт","Ср","Чет","Пет","Съб","Нед"],nav:"Категории",contacts:"Контакти",rights:"Всички права запазени.",tabT:"Докоснете с телефона",tabS:"Без приложение",coach:"Повикай треньор",noGym:"Липсва салон. Използвайте линка от картата или QR кода.",gymNF:"Салонът не е намерен.",gymOff:"Менюто временно не е достъпно.",pick:"Изберете треньор",noCoach:"Още няма добавени треньори.",coming:"Треньорът {n} идва. Застанете там, където докоснахте менюто.",callFail:"Не успяхме да извикаме треньора. Опитайте пак.",search:"Търси упражнение",all:"Всички",lvlAll:"Всички нива",lv:{beginner:"Начинаещ",intermediate:"Среден",advanced:"Напреднал"},sets:"Серии",eq:"Уред",empty:"Няма упражнения.",noVideo:"Още няма видео",watch:"Гледай",openV:"Отвори видеото в нов раздел"},
+en:{title:"The workout menu that lives in your pocket.",sub:"Every rep brings you closer to your best shape.",motto:"Strong Mindset = Strong Results",wifi:"Wi-Fi",pw:"Password",copyPw:"Copy",copied:"Password copied",hours:"Working hours",today:"Today",closed:"Closed",openNow:"Open now",closedNow:"Closed now",week:"Full week",allDay:"Open 24 hours",days:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],ds:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],nav:"Categories",contacts:"Contacts",rights:"All rights reserved.",tabT:"Tap with your phone",tabS:"No app needed",coach:"Call a coach",noGym:"No gym selected. Use the link from the card or QR code.",gymNF:"Gym not found.",gymOff:"This menu is temporarily unavailable.",pick:"Choose a coach",noCoach:"No coaches added yet.",coming:"Trainer {n} is coming. Stand where you tapped the gym menu.",callFail:"We could not call the trainer. Please try again.",search:"Search exercises",all:"All",lvlAll:"All levels",lv:{beginner:"Beginner",intermediate:"Intermediate",advanced:"Advanced"},sets:"Sets",eq:"Equipment",empty:"No exercises.",noVideo:"No video yet",watch:"Watch",openV:"Open the video in a new tab"}};
+const SEED=[
+{id:"s1",nb:"Лег с щанга",ne:"Barbell bench press",cat:"Гърди",lv:"intermediate",sets:"4 x 8",eq:"Щанга, лавица",vid:"",db:"Легнете на лавицата, стъпала на пода. Свалете щангата до средата на гърдите и избутайте контролирано.",de:"Lie on the bench, feet flat. Lower the bar to mid-chest and press up with control."},
+{id:"s2",nb:"Набирания",ne:"Pull-ups",cat:"Гръб",lv:"intermediate",sets:"3 x 8",eq:"Лост",vid:"",db:"Хват малко по-широк от раменете. Дръпнете брадичката над лоста без люлеене.",de:"Grip just wider than shoulders. Pull your chin over the bar without swinging."},
+{id:"s3",nb:"Клек",ne:"Back squat",cat:"Крака",lv:"intermediate",sets:"4 x 6",eq:"Щанга, стойка",vid:"",db:"Гръб прав, коленете следват посоката на пръстите. Слезте до успоредно или по-ниско.",de:"Keep your back straight, knees tracking over toes. Descend to parallel or lower."},
+{id:"s4",nb:"Раменна преса с дъмбели",ne:"Dumbbell shoulder press",cat:"Рамене",lv:"beginner",sets:"3 x 10",eq:"Дъмбели",vid:"",db:"Седнете с изправен гръб и избутайте дъмбелите над главата.",de:"Sit tall and press the dumbbells overhead."},
+{id:"s5",nb:"Планк",ne:"Plank",cat:"Корем",lv:"beginner",sets:"3 x 45 сек",eq:"Постелка",vid:"",db:"Тялото е права линия от глава до пети. Стегнете корема и дишайте равномерно.",de:"Body in a straight line from head to heels. Brace your abs and breathe steadily."}];
+const KEY="tmg.v1";
+let S={lang:"bg",cat:"",q:"",lv:"",items:[],coaches:[],last:{},card:"",spotDoc:null,gym:"",gymDoc:null},fs=null;
+const normSlug=s=>String(s||"").trim().toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40);
+const gcol=n=>fs.collection("gyms").doc(S.gym).collection(n);
+const normCard=s=>String(s||"").trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,64);
+const BGL={а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"h",ц:"ts",ч:"ch",ш:"sh",щ:"sht",ъ:"a",ь:"y",ю:"yu",я:"ya"};
+const spotSlug=s=>String(s||"").toLowerCase().replace(/[а-я]/g,c=>BGL[c]||"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+(function(){const q=new URLSearchParams(location.search),g=normSlug(q.get("gym")),c=normCard(q.get("card")),sp=normSlug(q.get("spot"));
+  S.gym=g;S.card=c;S.spot=c?"":sp;
+  try{const ss=sessionStorage,pg=normSlug(ss.getItem("tmg.gym"));
+    if(g){if(g!==pg){ss.removeItem("tmg.card");ss.removeItem("tmg.spot")}ss.setItem("tmg.gym",g)}
+    if(c){ss.setItem("tmg.card",c);ss.removeItem("tmg.spot")}else if(sp){ss.setItem("tmg.spot",sp);ss.removeItem("tmg.card")}
+    S.gym=normSlug(ss.getItem("tmg.gym"));S.card=normCard(ss.getItem("tmg.card"));S.spot=S.card?"":normSlug(ss.getItem("tmg.spot"))}catch(e){}})();
+function cleanUrl(){try{if(!S.gym||!history.replaceState)return;const q=new URLSearchParams(location.search);
+  if(!q.has("card")&&!q.has("spot"))return;
+  const sl=S.spotDoc?spotSlug(S.spotDoc.name)||spotSlug(S.spotDoc.nameEn):"";
+  history.replaceState(null,"",location.pathname+"?gym="+encodeURIComponent(S.gym)+(sl?"&spot="+sl:"")+location.hash)}catch(e){}}
+const spotName=()=>S.spotDoc?(S.lang==="en"&&S.spotDoc.nameEn?S.spotDoc.nameEn:S.spotDoc.name)||"":"";
+const loc=()=>spotName()?`<p class="hint">📍 ${esc(spotName())}</p>`:"";
+async function getSpot(){if(!S.card&&!S.spot){cleanUrl();return}
+  try{if(fs&&S.gymDoc){
+    if(S.card){const d=await gcol("cards").doc(S.card).get();S.spotDoc=d.exists?d.data():null}
+    else{const m=(await gcol("cards").get()).docs.find(d=>{const v=d.data();return spotSlug(v.name)===S.spot||spotSlug(v.nameEn)===S.spot});
+      if(m){S.card=m.id;S.spotDoc=m.data();try{sessionStorage.setItem("tmg.card",m.id)}catch(e){}}}}
+  else if(!S.card)return;
+  else{const a=JSON.parse(localStorage.getItem("tmg.cards")||"[]");S.spotDoc=a.find(x=>x.id===S.card)||null}}catch(e){console.error(e)}
+  if(S.gymDoc)cleanUrl()}
+const $=id=>document.getElementById(id),t=()=>T[S.lang];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const load=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+function blockPage(msg){const mn=document.querySelector("main");mn.querySelectorAll(":scope > *").forEach(e=>e.style.display="none");mn.insertAdjacentHTML("afterbegin",`<div class="empty" style="margin-top:60px">${esc(msg)}</div>`);$("fab").hidden=true}
+function splashOut(){const sp=$("splash");if(!sp||sp.classList.contains("out"))return;sp.classList.add("out");setTimeout(()=>sp.remove(),900)}
+function splashGo(){const sp=$("splash");if(!sp||sp.dataset.go)return;sp.dataset.go="1";
+  const g=S.gymDoc||{},b=$("spBrand"),name=g.name||"";
+  const mark=()=>`<div class="sp-logo sp-mark">${name?esc(name):"Tap<b>My</b>Gym"}</div>`;
+  const fin=()=>{if(sp.classList.contains("in"))return;sp.classList.add("in");setTimeout(splashOut,2000)};
+  if(!g.logo){b.innerHTML=mark();fin();return}
+  b.innerHTML=`<img class="sp-logo" alt="">`+(name?`<div class="sp-name">${esc(name)}</div>`:"");
+  const im=b.querySelector("img");im.onload=fin;im.onerror=()=>{b.innerHTML=mark();fin()};im.src=g.logo;setTimeout(fin,1800)}
+setTimeout(splashGo,7000);setTimeout(splashOut,11000);
+const dayKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function track(kind,id){if(!fs||!S.gym)return;
+  try{const inc=n=>firebase.firestore.FieldValue.increment(n),d=new Date(),k=dayKey(d),o={d:k};
+    if(kind==="view"){const sk="tmg.seen."+S.gym+"."+(S.card||"-"),last=+sessionStorage.getItem(sk)||0;
+      if(Date.now()-last<30*60000)return;sessionStorage.setItem(sk,Date.now());
+      o.views=inc(1);o.h={[String(d.getHours()).padStart(2,"0")]:inc(1)};if(S.card)o.cards={[S.card]:inc(1)}}
+    else if(kind==="ex"&&id)o.ex={[id]:inc(1)};else return;
+    gcol("stats").doc(k).set(o,{merge:true}).catch(e=>console.warn("stats",e))}catch(e){console.warn(e)}}
+function applyBrand(){const g=S.gymDoc||{},r=document.documentElement.style;
+  if(/^#[0-9a-f]{6}$/i.test(g.accent||"")){r.setProperty("--accent",g.accent);const n=parseInt(g.accent.slice(1),16),l=((n>>16)*299+((n>>8)&255)*587+(n&255)*114)/1000;r.setProperty("--accent-ink",l>150?"#0b0a09":"#ffffff")}
+  const lg=document.querySelector(".logo");if(g.name)lg.innerHTML=(g.logo?`<img src="${esc(g.logo)}" alt="" style="height:34px;vertical-align:middle;margin-right:8px;border-radius:6px" onerror="this.remove()">`:"")+esc(g.name);
+  if(g.name)document.title=g.name}
+async function getItems(){
+  if(FIREBASE_CONFIG){try{const B="https://www.gstatic.com/firebasejs/10.12.2/";
+    await load(B+"firebase-app-compat.js");await load(B+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fs=firebase.firestore();
+    if(!S.gym){blockPage(t().noGym);return[]}
+    const gd=await fs.collection("gyms").doc(S.gym).get();
+    if(!gd.exists){blockPage(t().gymNF);return[]}
+    S.gymDoc=gd.data();
+    if(S.gymDoc.suspended){blockPage(t().gymOff);return[]}
+    applyBrand();
+    const s=await gcol("exercises").get();
+    return s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.ts||0)-(b.ts||0))}catch(e){console.error(e);return[]}}
+  return SEED}
+const DAYS=["mon","tue","wed","thu","fri","sat","sun"];
+const todayKey=()=>DAYS[(new Date().getDay()+6)%7];
+const hrsTxt=h=>{const x=t();if(!h)return"";if(h.x)return x.closed;if(h.o&&h.c&&h.o===h.c)return x.allDay;return(h.o||"…")+" – "+(h.c||"…")};
+function openNowState(h){if(!h||h.x||!h.o||!h.c)return h&&h.x?false:null;if(h.o===h.c)return true;const d=new Date(),n=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");return h.o<h.c?(n>=h.o&&n<h.c):(n>=h.o||n<h.c)}
+const ICO={phone:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',wifi:'<svg viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg>'};
+function hrsGroups(){const hs=(S.gymDoc&&S.gymDoc.hours)||{},x=t(),out=[];
+  DAYS.forEach((k,n)=>{const v=hs[k]?hrsTxt(hs[k]):"";if(!v)return;const l=out[out.length-1];if(l&&l.v===v&&l.e===n-1)l.e=n;else out.push({s:n,e:n,v})});
+  return out.map(g=>[g.s===g.e?x.ds[g.s]:x.ds[g.s]+" – "+x.ds[g.e],g.v])}
+function paintFoot(){const el=$("fgrid");if(!el)return;const g=S.gymDoc||{},x=t(),w=g.wifi||{},name=g.name||"TapMyGym";
+  const motto=(S.lang==="en"?g.mottoEn||g.motto:g.motto||g.mottoEn)||x.motto;
+  const cats=[...new Set(sortItems(S.items).map(i=>i.cat).filter(Boolean))];
+  const hg=hrsGroups(),st=openNowState(g.hours&&g.hours[todayKey()]);
+  const rows=[];
+  if(g.phone)rows.push(`<div class="frow">${ICO.phone}<a href="tel:${esc(g.phone.replace(/[^+\d]/g,""))}">${esc(g.phone)}</a></div>`);
+  if(hg.length)rows.push(`<div class="frow">${ICO.clock}<div>${hg.map(([d,v])=>`<div class="fh2"><span>${esc(d)}</span><b>${esc(v)}</b></div>`).join("")}${st===null?"":`<span class="ist ${st?"on":"off"}">${st?x.openNow:x.closedNow}</span>`}</div></div>`);
+  if(w.n||w.p)rows.push(`<div class="frow">${ICO.wifi}<div><div>${esc(w.n||x.wifi)}</div>${w.p?`<div class="fpw">${x.pw}: <code>${esc(w.p)}</code><button type="button" class="fcp" data-wifi="1">${x.copyPw}</button></div>`:""}</div></div>`);
+  el.innerHTML=`<div class="fbrand">${g.logo?`<img src="${esc(g.logo)}" alt="" onerror="this.remove()">`:""}<div class="fname">${esc(name)}</div><p>${esc(motto)}</p></div>
+   ${cats.length?`<nav><div class="fhd">${x.nav}</div>${cats.map(c=>`<button type="button" class="flink" data-fc="${esc(c)}">${esc(c)}</button>`).join("")}</nav>`:""}
+   ${rows.length?`<div><div class="fhd">${x.contacts}</div>${rows.join("")}</div>`:""}`;
+  $("fcopy").textContent="© "+new Date().getFullYear()+" "+name+". "+x.rights}
+function openHours(){const x=t(),hs=(S.gymDoc&&S.gymDoc.hours)||{},tk=todayKey();
+  $("viewS").innerHTML=`<button class="close" data-x="1" aria-label="Close">✕</button><h2>${x.hours}</h2><div class="hweek">${DAYS.map((k,n)=>`<div class="${k===tk?"on":""}"><span>${x.days[n]}</span><b>${esc(hs[k]?hrsTxt(hs[k]):"—")}</b></div>`).join("")}</div>`;$("viewM").classList.add("open")}
+function copyWifi(){const p=(S.gymDoc&&S.gymDoc.wifi&&S.gymDoc.wifi.p)||"";if(!p)return;
+  (navigator.clipboard?navigator.clipboard.writeText(p):Promise.reject()).then(()=>showNotice(t().copied)).catch(()=>prompt(t().pw,p))}
+const exKey=i=>(i.ord??i.ts)||0;
+function sortItems(a){const o=(S.gymDoc&&S.gymDoc.catOrder)||[],first={};a.forEach((i,n)=>{const c=i.cat||"";if(!(c in first))first[c]=n});
+  const ci=c=>c===""?2e9:(o.indexOf(c)<0?1e9:o.indexOf(c));
+  return[...a].sort((p,q)=>{const cp=p.cat||"",cq=q.cat||"";return(ci(cp)-ci(cq))||(first[cp]-first[cq])||(exKey(p)-exKey(q))})}
+const nm=i=>(S.lang==="en"?i.ne||i.nb:i.nb||i.ne)||"",ds=i=>(S.lang==="en"?i.de||i.db:i.db||i.de)||"";
+function embed(u){if(!u)return null;u=u.trim();let m;
+  if((m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/)))return{k:"f",src:"https://www.youtube.com/embed/"+m[1]+"?rel=0"};
+  if((m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/)))return{k:"f",src:"https://player.vimeo.com/video/"+m[1]};
+  if(/\.(mp4|webm|ogg)(\?.*)?$/i.test(u))return{k:"v",src:u};
+  return{k:"l",src:u}}
+function paintStatic(){const x=t();
+  $("hTitle").textContent=(S.gymDoc&&(S.lang==="en"?S.gymDoc.sloganEn:S.gymDoc.slogan))||x.title;const gm=S.gymDoc?(S.lang==="en"?S.gymDoc.mottoEn||S.gymDoc.motto:S.gymDoc.motto||S.gymDoc.mottoEn):"";$("hSub").innerHTML=esc(x.sub)+`<span class="motto">${esc(gm||x.motto)}</span>`;paintFoot();$("q").placeholder=x.search;
+  $("fab").innerHTML='<span aria-hidden="true">📞</span><b>'+x.coach+"</b>";
+  const l=$("lvl");l.innerHTML=`<option value="">${x.lvlAll}</option>`+Object.entries(x.lv).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");l.value=S.lv;
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===S.lang));document.documentElement.lang=S.lang}
+function paint(){const x=t();
+  const all=sortItems(S.items),cats=[...new Set(all.map(i=>i.cat).filter(Boolean))];
+  $("chips").innerHTML=[["",x.all],...cats.map(c=>[c,c])].map(([v,l])=>`<button class="chip" data-c="${esc(v)}" aria-pressed="${S.cat===v}">${esc(l)}</button>`).join("");
+  const q=S.q.toLowerCase();
+  const list=all.filter(i=>(!S.cat||i.cat===S.cat)&&(!S.lv||i.lv===S.lv)&&(!q||((i.nb||"")+" "+(i.ne||"")+" "+(i.cat||"")).toLowerCase().includes(q)));
+  paintFoot();let pc=null;$("grid").innerHTML=list.length?list.map(i=>{const c=i.cat||"",hd=!S.cat&&c&&c!==pc?`<h2 class="sec">${esc(c)}</h2>`:"";pc=c;return hd+`<article class="card">
+    <button class="thumb ${i.vid?"":"none"}" data-v="${esc(i.id)}" aria-label="${esc(nm(i))}"><span class="badge">${esc(i.cat||"")}</span><span class="play">${i.vid?"▶":"•"}</span></button>
+    <div class="body"><h3>${esc(nm(i))}</h3>
+    <div class="meta">${i.sets?`<div>${x.sets}: <span>${esc(i.sets)}</span></div>`:""}<div><span>${esc(x.lv[i.lv]||"")}</span></div></div>
+    ${i.eq?`<div class="meta">${x.eq}: <span>${esc(i.eq)}</span></div>`:""}</div></article>`}).join(""):`<div class="empty">${x.empty}</div>`}
+function openView(id){const i=S.items.find(a=>a.id===id);if(!i)return;track("ex",id);const x=t(),e=embed(i.vid);
+  let v=`<div class="video"><span class="hint">${x.noVideo}</span></div>`;
+  if(e&&e.k==="f")v=`<div class="video"><iframe src="${esc(e.src)}" allow="accelerometer;autoplay;encrypted-media;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="${esc(nm(i))}"></iframe></div>`;
+  if(e&&e.k==="v")v=`<div class="video"><video src="${esc(e.src)}" controls playsinline></video></div>`;
+  if(e&&e.k==="l")v=`<div class="video"><a class="btn" href="${esc(e.src)}" target="_blank" rel="noopener">${x.watch}</a></div>`;
+  $("viewS").innerHTML=`<button class="close" data-x="1" aria-label="Close">✕</button><h2>${esc(nm(i))}</h2>${v}
+  ${e&&e.k!=="l"?`<a class="hint" href="${esc(e.k==="f"?i.vid:e.src)}" target="_blank" rel="noopener">${x.openV}</a>`:""}
+  <div class="pills">${i.cat?`<span class="pill">${esc(i.cat)}</span>`:""}<span class="pill">${esc(x.lv[i.lv]||"")}</span>${i.sets?`<span class="pill">${x.sets}: ${esc(i.sets)}</span>`:""}${i.eq?`<span class="pill">${esc(i.eq)}</span>`:""}</div>
+  <p class="desc">${esc(ds(i))}</p>`;$("viewM").classList.add("open")}
+const av=c=>`<span class="av">${esc((c.name||"?").trim().charAt(0).toUpperCase())}${c.photo?`<img src="${esc(c.photo)}" alt="" onerror="this.remove()">`:""}</span>`;
+async function getCoaches(){
+  if(fs&&S.gym){try{const s=await gcol("coaches").get();return s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.ts||0)-(b.ts||0))}catch(e){console.error(e);return[]}}
+  try{const r=JSON.parse(localStorage.getItem("tmg.coaches"));if(Array.isArray(r))return r}catch(e){}
+  return[]}
+async function openCoach(){const x=t();
+  $("coachS").innerHTML=`<button class="close" data-cx="1" aria-label="Close">✕</button><h2>${x.pick}</h2>${loc()}<div class="coaches"></div>`;$("coachM").classList.add("open");
+  S.coaches=await getCoaches();
+  $("coachS").innerHTML=`<button class="close" data-cx="1" aria-label="Close">✕</button><h2>${x.pick}</h2>${loc()}<div class="coaches">${S.coaches.length?S.coaches.map(c=>`<button class="coach" data-k="${esc(c.id)}">${av(c)}<span><b>${esc(c.name)}</b><small>${esc(c.role||"")}</small></span></button>`).join(""):`<p class="hint">${x.noCoach}</p>`}</div>`}
+const closeCoach=()=>$("coachM").classList.remove("open");
+let nt;function showNotice(m){$("noticeT").textContent=m;$("notice").hidden=false;clearTimeout(nt);nt=setTimeout(()=>$("notice").hidden=true,12000)}
+async function pickCoach(id){const c=S.coaches.find(a=>a.id===id);if(!c)return;closeCoach();
+  if(fs&&Date.now()-(S.last[id]||0)>60000){
+    try{const d={coachId:c.id,coachName:c.name,ts:Date.now(),done:false};if(S.card)d.card=S.card;if(S.spotDoc&&S.spotDoc.name)d.spot=String(S.spotDoc.name).slice(0,79);await gcol("calls").add(d);S.last[id]=Date.now()}
+    catch(e){console.error(e);showNotice(t().callFail);return}}
+  showNotice(t().coming.replace("{n}",c.name)+(spotName()?"\n📍 "+spotName():""))}
+$("noticeX").onclick=()=>{$("notice").hidden=true};
+const shut=()=>{$("viewM").classList.remove("open");$("viewS").innerHTML=""};
+document.addEventListener("click",e=>{
+  if(e.target===$("viewM"))return shut();
+  if(e.target===$("coachM"))return closeCoach();
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.wifi)copyWifi();
+  else if(b.dataset.fc!==undefined){S.cat=b.dataset.fc;paint();$("chips").scrollIntoView({behavior:"smooth",block:"start"})}
+  else if(b.dataset.hrs)openHours();
+  else if(b.dataset.l){S.lang=b.dataset.l;paintStatic();paint()}
+  else if(b.classList.contains("chip")){S.cat=b.dataset.c;paint()}
+  else if(b.dataset.v)openView(b.dataset.v);
+  else if(b.dataset.x)shut();
+  else if(b.dataset.k)pickCoach(b.dataset.k);
+  else if(b.dataset.cx)closeCoach();
+  else if(b.id==="fab")openCoach()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){shut();closeCoach()}});
+$("q").oninput=e=>{S.q=e.target.value;paint()};$("lvl").onchange=e=>{S.lv=e.target.value;paint()};
+paintStatic();getItems().then(i=>{S.items=i;paint();splashGo();return getSpot()}).then(()=>{paintStatic();if(S.gymDoc&&!S.gymDoc.suspended)track("view")});
+</script>
+</body>
+</html>
